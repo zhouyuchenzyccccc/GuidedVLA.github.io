@@ -2,75 +2,925 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>GuidedVLA</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GuidedVLA: Specifying Task-Relevant Factors via Plug-and-Play Action Attention Specialization</title>
+  <meta name="description" content="GuidedVLA transforms VLA action decoders into robust, interpretable systems through functional attention head specialization for object grounding, geometry perception, and temporal skill logic.">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary: #8b5cf6;
+      --accent: #0ea5e9;
+      --dark: #0f172a;
+      --gray-900: #0f172a;
+      --gray-800: #1e293b;
+      --gray-700: #334155;
+      --gray-600: #475569;
+      --gray-300: #cbd5e1;
+      --gray-200: #e2e8f0;
+      --gray-100: #f1f5f9;
+      --white: #ffffff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --border-radius: 12px;
+      --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: var(--gray-800);
+      background-color: var(--white);
+      overflow-x: hidden;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+    
+    section {
+      padding: 5rem 0;
+    }
+    
+    section:first-of-type {
+      padding-top: 3rem;
+    }
+    
+    h1, h2, h3, h4 {
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+      color: var(--gray-900);
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    h2 {
+      font-size: 2rem;
+      position: relative;
+      padding-bottom: 0.75rem;
+    }
+    
+    h2:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 60px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+    
+    h3 {
+      font-size: 1.5rem;
+      margin-top: 2.5rem;
+      margin-bottom: 1.25rem;
+    }
+    
+    p {
+      margin-bottom: 1.25rem;
+      font-size: 1.05rem;
+    }
+    
+    a {
+      color: var(--primary);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+    
+    a:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+    
+    .btn {
+      display: inline-block;
+      background: var(--primary);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: var(--transition);
+      border: 2px solid var(--primary);
+      cursor: pointer;
+      text-align: center;
+    }
+    
+    .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(37, 99, 235, 0.05);
+    }
+    
+    .btn-large {
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+    }
+    
+    /* Header/Navigation */
+    header {
+      background: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 0;
+    }
+    
+    .logo {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .logo span {
+      color: var(--gray-900);
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+    
+    .nav-links a {
+      font-weight: 500;
+      color: var(--gray-700);
+      transition: var(--transition);
+    }
+    
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--primary);
+    }
+    
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--gray-800);
+      cursor: pointer;
+    }
+    
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(139, 92, 246, 0.03) 100%);
+      padding: 6rem 0 4rem;
+      text-align: center;
+    }
+    
+    .hero h1 {
+      max-width: 800px;
+      margin: 0 auto 1.5rem;
+    }
+    
+    .hero p {
+      max-width: 700px;
+      margin: 0 auto 2.5rem;
+      font-size: 1.25rem;
+      color: var(--gray-700);
+    }
+    
+    .hero-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+    
+    .teaser-img {
+      max-width: 100%;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin: 3rem auto 0;
+      display: block;
+    }
+    
+    /* Method Section */
+    .method-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2.5rem;
+    }
+    
+    .method-card {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      box-shadow: var(--box-shadow);
+      transition: var(--transition);
+      border: 1px solid var(--gray-200);
+    }
+    
+    .method-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      border-color: rgba(37, 99, 235, 0.2);
+    }
+    
+    .method-card h3 {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0;
+      color: var(--primary);
+    }
+    
+    .method-card h3 i {
+      font-size: 1.5rem;
+    }
+    
+    .method-card.object { border-top: 4px solid #10b981; }
+    .method-card.skill { border-top: 4px solid #8b5cf6; }
+    .method-card.depth { border-top: 4px solid #0ea5e9; }
+    
+    /* Results Section */
+    .results-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+      margin-top: 2rem;
+    }
+    
+    @media (min-width: 900px) {
+      .results-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    .result-card {
+      background: white;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      border: 1px solid var(--gray-200);
+    }
+    
+    .result-card img {
+      width: 100%;
+      display: block;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    
+    .result-content {
+      padding: 1.75rem;
+    }
+    
+    .result-content h3 {
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .metric-badge {
+      display: inline-block;
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--primary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-left: 0.5rem;
+    }
+    
+    /* Failure Analysis */
+    .failure-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    
+    .failure-case {
+      background: white;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--box-shadow);
+      border: 1px solid var(--gray-200);
+    }
+    
+    .failure-case img {
+      width: 100%;
+      display: block;
+    }
+    
+    .failure-content {
+      padding: 1.5rem;
+    }
+    
+    .domain-badge {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    
+    .domain-household {
+      background: rgba(16, 185, 129, 0.1);
+      color: #059669;
+    }
+    
+    .domain-chemlab {
+      background: rgba(139, 92, 246, 0.1);
+      color: #7c3aed;
+    }
+    
+    /* Citation */
+    .citation-box {
+      background: var(--gray-50);
+      border-left: 4px solid var(--primary);
+      padding: 1.5rem;
+      border-radius: 0 var(--border-radius) var(--border-radius) 0;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.95rem;
+      margin: 2.5rem 0;
+      position: relative;
+    }
+    
+    .citation-box:before {
+      content: '"';
+      position: absolute;
+      top: -15px;
+      left: 10px;
+      font-size: 4rem;
+      color: rgba(37, 99, 235, 0.1);
+      font-family: serif;
+      line-height: 1;
+    }
+    
+    .bibtex-toggle {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .bibtex-content {
+      display: none;
+      margin-top: 1rem;
+      padding: 1.25rem;
+      background: rgba(15, 23, 42, 0.03);
+      border-radius: var(--border-radius);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+    
+    /* Footer */
+    footer {
+      background: var(--gray-900);
+      color: var(--gray-300);
+      padding: 4rem 0 2.5rem;
+      margin-top: 3rem;
+    }
+    
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2.5rem;
+    }
+    
+    .footer-section h3 {
+      color: white;
+      font-size: 1.35rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      padding-bottom: 0.75rem;
+    }
+    
+    .footer-section h3:after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 40px;
+      height: 3px;
+      background: var(--primary);
+    }
+    
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .footer-links a {
+      color: var(--gray-300);
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .footer-links a:hover {
+      color: white;
+      transform: translateX(3px);
+    }
+    
+    .copyright {
+      text-align: center;
+      padding-top: 2.5rem;
+      margin-top: 2.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--gray-400);
+      font-size: 0.95rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 900px) {
+      .container {
+        padding: 0 1.5rem;
+      }
+      
+      h1 {
+        font-size: 2.1rem;
+      }
+      
+      h2 {
+        font-size: 1.75rem;
+      }
+      
+      section {
+        padding: 3.5rem 0;
+      }
+      
+      .hero {
+        padding: 4rem 0 3rem;
+      }
+      
+      .hero p {
+        font-size: 1.1rem;
+      }
+      
+      .nav-links {
+        display: none;
+      }
+      
+      .mobile-menu-btn {
+        display: block;
+      }
+      
+      .failure-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      .hero-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .btn {
+        width: 100%;
+        max-width: 300px;
+      }
+      
+      .method-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      h1 {
+        font-size: 1.9rem;
+      }
+      
+      .logo {
+        font-size: 1.5rem;
+      }
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+    
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+  </style>
 </head>
-
 <body>
-<div class="container">
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <nav>
+        <a href="#" class="logo">
+          <i class="fas fa-brain"></i>
+          <span>Guided</span>VLA
+        </a>
+        <button class="mobile-menu-btn" id="mobile-menu-toggle">
+          <i class="fas fa-bars"></i>
+        </button>
+        <ul class="nav-links">
+          <li><a href="#method" class="active">Method</a></li>
+          <li><a href="#results">Results</a></li>
+          <li><a href="#failure-analysis">Failure Analysis</a></li>
+          <li><a href="#citation">Citation</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
 
-  <h1>GuidedVLA</h1>
-  <h2>
-    Specifying Task-Relevant Factors via Plug-and-Play Action Attention Specialization
-  </h2>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <h1>Specifying Task-Relevant Factors via Plug-and-Play Action Attention Specialization</h1>
+      <p>Vision-Language-Action models often develop shortcut-prone representations that conflate task semantics with incidental visual statistics. GuidedVLA transforms the action decoder into a robust, interpretable system through functional attention head specialization.</p>
+      <div class="hero-buttons">
+        <a href="https://arxiv.org/abs/2506.XXXXX" class="btn btn-large" target="_blank">
+          <i class="fas fa-file-pdf"></i> Paper (Coming Soon)
+        </a>
+        <a href="https://github.com/your-organization/GuidedVLA" class="btn btn-large btn-secondary" target="_blank">
+          <i class="fab fa-github"></i> Code (Coming Soon)
+        </a>
+      </div>
+      <img src="figures/teaser_v2.png" alt="GuidedVLA Teaser" class="teaser-img fade-in">
+    </div>
+  </section>
 
-  <p class="authors">
-    Anonymous Authors<br>
-    <em>Under Review</em>
-  </p>
+  <!-- Method Section -->
+  <section id="method">
+    <div class="container">
+      <h2>Method: Functional Attention Head Specialization</h2>
+      <p>Instead of allowing cross-attention heads to develop roles implicitly, GuidedVLA manually specifies the information each head should capture by supervising them with distinct, task-relevant auxiliary signals. This structural constraint enforces functional decoupling of the action decoder, ensuring critical factors are mapped to dedicated semantic subspaces.</p>
+      
+      <div class="method-grid">
+        <div class="method-card object fade-in delay-1">
+          <h3><i class="fas fa-bullseye"></i> Object Grounding Head</h3>
+          <p>Supervises attention maps to explicitly ground task-relevant objects and suppress distractors via attention mask alignment loss. Critical for precise localization on transparent/refractive objects and small targets.</p>
+          <p><strong>Key insight:</strong> Forces action tokens to attend to semantically meaningful regions rather than incidental visual contrast.</p>
+        </div>
+        
+        <div class="method-card skill fade-in delay-2">
+          <h3><i class="fas fa-clock"></i> Skill Recognition Head</h3>
+          <p>Aligns internal feature representations with temporal skill phases (e.g., Pick → Place) through auxiliary classification loss. Prevents stage-skipping in multi-step behaviors.</p>
+          <p><strong>Key insight:</strong> Encodes temporal intent progression to maintain stage awareness across extended horizons.</p>
+        </div>
+        
+        <div class="method-card depth fade-in delay-3">
+          <h3><i class="fas fa-cube"></i> Geometry Perception Head</h3>
+          <p>Injects explicit 3D spatial information by constraining dedicated attention heads to process only features from a frozen depth encoder (Depth Anything 3).</p>
+          <p><strong>Key insight:</strong> Provides metric geometric reasoning for sub-centimeter precision tasks where monocular RGB cues are insufficient.</p>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin-top: 3rem;">
+        <img src="figures/method.png" alt="GuidedVLA Architecture" style="max-width: 100%; border-radius: var(--border-radius); box-shadow: var(--box-shadow);">
+        <p style="margin-top: 1rem; font-style: italic; color: var(--gray-600);">Figure: Architecture of GuidedVLA showing three specialized attention heads with distinct supervision pathways.</p>
+      </div>
+    </div>
+  </section>
 
-  <div class="links">
-    <a href="#">Paper (PDF)</a> |
-    <a href="#">Code</a> |
-    <a href="#">Video</a>
-  </div>
+  <!-- Results Section -->
+  <section id="results" style="background-color: var(--gray-50);">
+    <div class="container">
+      <h2>Experimental Results</h2>
+      <p>GuidedVLA achieves significant performance gains across simulation benchmarks and real-world platforms, with particularly strong improvements under distribution shifts.</p>
+      
+      <div class="results-container">
+        <div class="result-card fade-in delay-1">
+          <img src="figures/robotwin_grouped_bar_pretty.png" alt="Robotwin 2.0 Results">
+          <div class="result-content">
+            <h3><i class="fas fa-robot"></i> Robotwin 2.0 Benchmark</h3>
+            <p>Average success rate improved from 77.38% (π₀ baseline) to <span class="metric-badge">90.63%</span> with all three specialized heads.</p>
+            <p>Single-head ablations reveal task-specific alignment: depth head excels on geometry-heavy tasks (Beat Block Hammer: 78% → 99%), skill head dominates long-horizon tasks (Lift Pot: 92% → 99%).</p>
+          </div>
+        </div>
+        
+        <div class="result-card fade-in delay-2">
+          <img src="figures/three_panel_ablation_vis.png" alt="Factor Quality Analysis">
+          <div class="result-content">
+            <h3><i class="fas fa-chart-line"></i> Factor Quality Correlation</h3>
+            <p>Higher factor quality directly correlates with improved task performance:</p>
+            <ul style="padding-left: 1.5rem; margin: 1rem 0;">
+              <li><strong>Object grounding:</strong> Attention mass on target ↑ from 0.25 → 1.0 → Success ↑ 61.3% → 74.6%</li>
+              <li><strong>Skill recognition:</strong> Probe accuracy ↑ 0.25 → 1.0 → Success ↑ 66.2% → 72.9%</li>
+              <li><strong>Geometry perception:</strong> Depth feature ratio ↑ 0 → 1.0 → Success ↑ 15.6% → 76.7%</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <div style="background: white; border-radius: var(--border-radius); padding: 2rem; margin-top: 2.5rem; box-shadow: var(--box-shadow);">
+        <h3 style="margin-top: 0;"><i class="fas fa-table"></i> Real-World Cross-Platform Generalization</h3>
+        <p>Success rates (N=20) across household (ALOHA) and chemical laboratory (PSI-Bot) platforms under distribution shifts:</p>
+        <div style="overflow-x: auto; margin-top: 1.5rem;">
+          <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+            <thead>
+              <tr style="background: rgba(37, 99, 235, 0.08);">
+                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--gray-300);">Generalization Setting</th>
+                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--gray-300);">Method</th>
+                <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid var(--gray-300);">ALOHA (T1-T3)</th>
+                <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid var(--gray-300);">PSI-Bot (T4-T6)</th>
+                <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid var(--gray-300);">Average</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td rowspan="2" style="padding: 0.75rem; border-bottom: 1px solid var(--gray-200);">In-Domain</td>
+                <td style="padding: 0.75rem; border-bottom: 1px solid var(--gray-200);">π₀ Baseline</td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--gray-200);">30/60 (50.0%)</td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--gray-200);">37/60 (61.7%)</td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--gray-200);">55.8%</td>
+              </tr>
+              <tr style="background: rgba(16, 185, 129, 0.08);">
+                <td style="padding: 0.75rem; font-weight: 600;">GuidedVLA (Ours)</td>
+                <td style="padding: 0.75rem; text-align: center; font-weight: 600;">43/60 (71.7%)</td>
+                <td style="padding: 0.75rem; text-align: center; font-weight: 600;">48/60 (80.0%)</td>
+                <td style="padding: 0.75rem; text-align: center; font-weight: 600; color: var(--success);">75.8%</td>
+              </tr>
+              <tr>
+                <td rowspan="2" style="padding: 0.75rem; border-bottom: 1px solid var(--gray-200);">Scene (Clutter)</td>
+                <td style="padding: 0.75rem; border-bottom: 1px solid var(--gray-200);">π₀ Baseline</td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--gray-200);">21/60 (35.0%)</td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--gray-200);">32/60 (53.3%)</td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--gray-200);">44.2%</td>
+              </tr>
+              <tr style="background: rgba(16, 185, 129, 0.08);">
+                <td style="padding: 0.75rem; font-weight: 600;">GuidedVLA (Ours)</td>
+                <td style="padding: 0.75rem; text-align: center; font-weight: 600;">36/60 (60.0%)</td>
+                <td style="padding: 0.75rem; text-align: center; font-weight: 600;">45/60 (75.0%)</td>
+                <td style="padding: 0.75rem; text-align: center; font-weight: 600; color: var(--success);">67.5%</td>
+              </tr>
+              <tr>
+                <td rowspan="2" style="padding: 0.75rem;">
+                  Lighting (Illumination Shift)
+                </td>
+                <td style="padding: 0.75rem; border-bottom: 1px solid var(--gray-200);">π₀ Baseline</td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--gray-200);">30/60 (50.0%)</td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--gray-200);">39/60 (65.0%)</td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--gray-200);">57.5%</td>
+              </tr>
+              <tr style="background: rgba(16, 185, 129, 0.08);">
+                <td style="padding: 0.75rem; font-weight: 600;">GuidedVLA (Ours)</td>
+                <td style="padding: 0.75rem; text-align: center; font-weight: 600;">44/60 (73.3%)</td>
+                <td style="padding: 0.75rem; text-align: center; font-weight: 600;">51/60 (85.0%)</td>
+                <td style="padding: 0.75rem; text-align: center; font-weight: 600; color: var(--success);">79.2%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="margin-top: 1.25rem; font-style: italic; color: var(--gray-600);">
+          Tasks: T1=fruit/vegetable grasping, T2=bowl stacking, T3=tabletop cleaning, T4=beaker→mantle, T5=beaker nesting, T6=ring-stand assembly
+        </p>
+      </div>
+    </div>
+  </section>
 
-  <img src="assets/teaser.png" class="teaser">
+  <!-- Failure Analysis -->
+  <section id="failure-analysis">
+    <div class="container">
+      <h2>Failure Case Analysis Across Domains</h2>
+      <p>Failures across all six tasks share a unified origin: <strong>end-to-end training without explicit factor guidance causes the action decoder to develop shortcut-prone representations that conflate task semantics with incidental visual statistics</strong>. Critically, these limitations become safety-critical in chemically complex environments.</p>
+      
+      <div class="failure-grid">
+        <div class="failure-case fade-in delay-1">
+          <img src="figures/failure_cases_tasks123.png" alt="Household Task Failures">
+          <div class="failure-content">
+            <span class="domain-badge domain-household">Household Tasks (1-3)</span>
+            <h3>ALOHA Platform Failures</h3>
+            <p><strong>Task 1:</strong> "Phantom grasping" on small strawberry due to reliance on lighting-dependent contrast rather than invariant identity.</p>
+            <p><strong>Task 2:</strong> "Half-grasp" failure in bowl stacking from insufficient penetration depth estimation (<5mm clearance).</p>
+            <p><strong>Task 3:</strong> Stage-skipping behavior—completes pouring but skips mandatory tool return phase.</p>
+          </div>
+        </div>
+        
+        <div class="failure-case fade-in delay-2">
+          <img src="figures/failure_cases_chem_tasks456.png" alt="ChemLab Task Failures">
+          <div class="failure-content">
+            <span class="domain-badge domain-chemlab">ChemLab Tasks (4-6)</span>
+            <h3>PSI-Bot Platform Failures</h3>
+            <p><strong>Task 4:</strong> Phantom grasp on transparent beaker due to refraction-induced appearance instability; mantle rim collisions from clearance misjudgment.</p>
+            <p><strong>Task 5:</strong> Lighting-induced miss-grasps on small beaker; beaker-beaker collisions during placement due to insufficient metric clearance control.</p>
+            <p><strong>Task 6:</strong> Premature release of wire gauze before stabilization causes roll-off; skewed beaker placement leading to instability.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div style="background: white; border-radius: var(--border-radius); padding: 2rem; margin-top: 2.5rem; box-shadow: var(--box-shadow);">
+        <h3 style="margin-top: 0;"><i class="fas fa-exclamation-triangle"></i> Cross-Domain Failure Amplification</h3>
+        <p>The same fundamental limitations observed in household settings become <strong>safety-critical</strong> in laboratory environments:</p>
+        <ul style="padding-left: 1.75rem; margin: 1.5rem 0; line-height: 1.8;">
+          <li><span style="color: var(--danger); font-weight: 600;">Object grounding failures:</span> Phantom grasps on transparent glassware risk equipment damage and chemical spills</li>
+          <li><span style="color: var(--danger); font-weight: 600;">Geometric reasoning failures:</span> Sub-millimeter clearance errors cause collisions that are merely task failures at home but safety hazards in chemical environments</li>
+          <li><span style="color: var(--danger); font-weight: 600;">Temporal skill failures:</span> Premature release of lab equipment causes breakage/spillage with potential chemical exposure risks</li>
+        </ul>
+        <p style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--gray-300); font-weight: 600;">
+          GuidedVLA addresses these limitations through functional decoupling—transforming the action decoder into a robust, interpretable system where failures become diagnosable and addressable through targeted supervision.
+        </p>
+      </div>
+    </div>
+  </section>
 
-  <h3>Abstract</h3>
-  <p>
-    Vision-Language-Action (VLA) models often rely on implicit end-to-end
-    supervision, which leads to spurious correlations and poor generalization.
-    We propose <b>GuidedVLA</b>, a framework that explicitly guides the action
-    decoder to focus on task-relevant factors via attention head specialization.
-    By supervising object grounding, temporal skill logic, and geometric perception
-    on dedicated heads, GuidedVLA significantly improves robustness and
-    generalization across simulation and real-robot benchmarks.
-  </p>
-
-  <h3>Method</h3>
-  <img src="assets/method.png" class="figure">
-  <p>
-    GuidedVLA treats the action decoder as an assembly of functional components.
-    Specific attention heads are supervised to specialize in:
-    <b>object grounding</b>, <b>skill recognition</b>, and <b>geometry perception</b>.
-    A ControlNet-style residual adapter enables plug-and-play guidance without
-    disrupting pretrained backbones.
-  </p>
-
-  <h3>Experiments</h3>
-  <img src="assets/robot.png" class="figure">
-  <ul>
-    <li>LIBERO-Plus robustness benchmark</li>
-    <li>RobotWin 2.0 multi-task evaluation</li>
-    <li>Real-world experiments on ALOHA AgileX and PSI-Bot</li>
-  </ul>
-
-  <h3>BibTeX</h3>
-  <pre>
-@article{guidedvla2026,
+  <!-- Citation -->
+  <section id="citation" style="background-color: var(--gray-50);">
+    <div class="container">
+      <h2>Citation</h2>
+      
+      <div class="citation-box">
+        <p>Haoxuan Chen*, Cunxin Xiong*, Xiaosong Zhang*, et al. GuidedVLA: Specifying Task-Relevant Factors via Plug-and-Play Action Attention Specialization. Conference on Robot Learning (CoRL) 2026. (*Equal contribution)</p>
+        <button class="bibtex-toggle" id="toggle-bibtex">
+          <i class="fas fa-code"></i> Show BibTeX
+        </button>
+        <div class="bibtex-content" id="bibtex-content">
+@inproceedings{chen2026guidedvla,
   title={GuidedVLA: Specifying Task-Relevant Factors via Plug-and-Play Action Attention Specialization},
-  author={Anonymous},
-  journal={arXiv preprint},
+  author={Chen, Haoxuan and Xiong, Cunxin and Zhang, Xiaosong and et al.},
+  booktitle={Conference on Robot Learning (CoRL)},
   year={2026}
 }
-  </pre>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin-top: 2.5rem;">
+        <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">Code and datasets will be open-sourced after paper acceptance</p>
+        <div style="display: flex; justify-content: center; gap: 1.25rem; flex-wrap: wrap;">
+          <a href="https://arxiv.org/abs/2506.XXXXX" class="btn" target="_blank">
+            <i class="fas fa-file-pdf"></i> arXiv Paper
+          </a>
+          <a href="https://github.com/your-organization/GuidedVLA" class="btn btn-secondary" target="_blank">
+            <i class="fab fa-github"></i> GitHub Repository
+          </a>
+          <a href="https://huggingface.co/GuidedVLA" class="btn btn-secondary" target="_blank">
+            <i class="fas fa-cloud"></i> Hugging Face
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
 
+  <!-- Footer -->
   <footer>
-    <p>© 2026 GuidedVLA Project</p>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-section">
+          <h3>GuidedVLA</h3>
+          <p style="color: var(--gray-400); margin-bottom: 1.5rem; line-height: 1.7;">
+            A framework for building robust, interpretable Vision-Language-Action models through functional attention head specialization.
+          </p>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="https://twitter.com/yourlab" target="_blank" aria-label="Twitter">
+              <i class="fab fa-twitter fa-2x" style="color: var(--gray-400); transition: var(--transition);"></i>
+            </a>
+            <a href="https://github.com/your-organization" target="_blank" aria-label="GitHub">
+              <i class="fab fa-github fa-2x" style="color: var(--gray-400); transition: var(--transition);"></i>
+            </a>
+            <a href="mailto:contact@yourlab.edu" aria-label="Email">
+              <i class="fas fa-envelope fa-2x" style="color: var(--gray-400); transition: var(--transition);"></i>
+            </a>
+          </div>
+        </div>
+        
+        <div class="footer-section">
+          <h3>Resources</h3>
+          <ul class="footer-links">
+            <li><a href="#method"><i class="fas fa-chevron-right"></i> Method Overview</a></li>
+            <li><a href="#results"><i class="fas fa-chevron-right"></i> Experimental Results</a></li>
+            <li><a href="#failure-analysis"><i class="fas fa-chevron-right"></i> Failure Analysis</a></li>
+            <li><a href="https://arxiv.org/abs/2506.XXXXX" target="_blank"><i class="fas fa-chevron-right"></i> Paper (arXiv)</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-section">
+          <h3>Related Work</h3>
+          <ul class="footer-links">
+            <li><a href="https://pi0-robot.github.io/" target="_blank"><i class="fas fa-robot"></i> π₀: End-to-End VLA</a></li>
+            <li><a href="https://robotwin.ai/" target="_blank"><i class="fas fa-cube"></i> Robotwin 2.0 Benchmark</a></li>
+            <li><a href="https://libero-robot.github.io/" target="_blank"><i class="fas fa-list"></i> LIBERO-Plus Benchmark</a></li>
+            <li><a href="https://github.com/facebookresearch/segment-anything-2" target="_blank"><i class="fas fa-object-ungroup"></i> SAM2 Tracking</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="copyright">
+        <p>&copy; 2026 GuidedVLA Team. This work is affiliated with [Your Institution/Lab]. All rights reserved.</p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--gray-500);">
+          Website template inspired by academic project pages. Icons from Font Awesome.
+        </p>
+      </div>
+    </div>
   </footer>
 
-</div>
+  <script>
+    // Mobile menu toggle
+    document.getElementById('mobile-menu-toggle').addEventListener('click', function() {
+      const navLinks = document.querySelector('.nav-links');
+      navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
+    });
+    
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          window.scrollTo({
+            top: target.offsetTop - 80,
+            behavior: 'smooth'
+          });
+          
+          // Close mobile menu if open
+          document.querySelector('.nav-links').style.display = 'none';
+        }
+      });
+    });
+    
+    // BibTeX toggle
+    document.getElementById('toggle-bibtex').addEventListener('click', function() {
+      const content = document.getElementById('bibtex-content');
+      const icon = this.querySelector('i');
+      
+      if (content.style.display === 'block') {
+        content.style.display = 'none';
+        icon.className = 'fas fa-code';
+        this.innerHTML = '<i class="fas fa-code"></i> Show BibTeX';
+      } else {
+        content.style.display = 'block';
+        icon.className = 'fas fa-times';
+        this.innerHTML = '<i class="fas fa-times"></i> Hide BibTeX';
+      }
+    });
+    
+    // Simple scroll animation
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('fade-in');
+        }
+      });
+    }, observerOptions);
+    
+    // Observe elements with fade-in class
+    document.querySelectorAll('.fade-in').forEach(el => {
+      el.classList.remove('fade-in'); // Remove initially for animation to trigger on scroll
+      observer.observe(el);
+    });
+  </script>
 </body>
 </html>
