@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GuidedVLA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div class="container">
+
+  <h1>GuidedVLA</h1>
+  <h2>
+    Specifying Task-Relevant Factors via Plug-and-Play Action Attention Specialization
+  </h2>
+
+  <p class="authors">
+    Anonymous Authors<br>
+    <em>Under Review</em>
+  </p>
+
+  <div class="links">
+    <a href="#">Paper (PDF)</a> |
+    <a href="#">Code</a> |
+    <a href="#">Video</a>
+  </div>
+
+  <img src="assets/teaser.png" class="teaser">
+
+  <h3>Abstract</h3>
+  <p>
+    Vision-Language-Action (VLA) models often rely on implicit end-to-end
+    supervision, which leads to spurious correlations and poor generalization.
+    We propose <b>GuidedVLA</b>, a framework that explicitly guides the action
+    decoder to focus on task-relevant factors via attention head specialization.
+    By supervising object grounding, temporal skill logic, and geometric perception
+    on dedicated heads, GuidedVLA significantly improves robustness and
+    generalization across simulation and real-robot benchmarks.
+  </p>
+
+  <h3>Method</h3>
+  <img src="assets/method.png" class="figure">
+  <p>
+    GuidedVLA treats the action decoder as an assembly of functional components.
+    Specific attention heads are supervised to specialize in:
+    <b>object grounding</b>, <b>skill recognition</b>, and <b>geometry perception</b>.
+    A ControlNet-style residual adapter enables plug-and-play guidance without
+    disrupting pretrained backbones.
+  </p>
+
+  <h3>Experiments</h3>
+  <img src="assets/robot.png" class="figure">
+  <ul>
+    <li>LIBERO-Plus robustness benchmark</li>
+    <li>RobotWin 2.0 multi-task evaluation</li>
+    <li>Real-world experiments on ALOHA AgileX and PSI-Bot</li>
+  </ul>
+
+  <h3>BibTeX</h3>
+  <pre>
+@article{guidedvla2026,
+  title={GuidedVLA: Specifying Task-Relevant Factors via Plug-and-Play Action Attention Specialization},
+  author={Anonymous},
+  journal={arXiv preprint},
+  year={2026}
+}
+  </pre>
+
+  <footer>
+    <p>© 2026 GuidedVLA Project</p>
+  </footer>
+
+</div>
+</body>
+</html>
